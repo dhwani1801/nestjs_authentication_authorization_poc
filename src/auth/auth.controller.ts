@@ -13,6 +13,15 @@ export class AuthController {
      */
     @Post('/login')
     async login(@Body() loginData: LoginDto) {
+      try
+      {
         return this.authService.login(loginData);
+      }
+      catch(error)
+      {
+        console.error('error, authController.register', error);
+        throw error ;
+      }
+
     }
 }

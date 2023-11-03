@@ -16,7 +16,14 @@ export class UsersController {
    */
   @Post('register')
   async register(@Body() registrationData: RegistrationDto): Promise<User> {
-    return await this.usersService.registerUser(registrationData);
+    try {
+      return await this.usersService.registerUser(registrationData);
+    }
+    catch (error) {
+      console.error('error, userController.register', error);
+      throw error;
+    }
+
   }
 
 

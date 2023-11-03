@@ -10,10 +10,9 @@ export class AuthService {
     private jwtService: JwtService,
   ) { }
 
-  async validateUser(email: string, password: string) {
+  async validateUser(email: string, pass: string) {
     const user = await this.userService.findByEmail(email);
-
-    if (user && user.password === password) {
+    if (user && (await this.userService.comparePassword(pass, user.password))) {
       const { password, ...result } = user;
       return result;
     }
@@ -21,12 +20,13 @@ export class AuthService {
   }
 
   /**
-   * login function which will generate jwt token
+   * login function which will generate j token
    * @param loginDto 
    * @returns 
    */
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
+    console.log('userrrr   : ', user)
     const payload = { email: user.email, sub: user.id };
     if (!user) {
       throw new NotFoundException('User not found');
