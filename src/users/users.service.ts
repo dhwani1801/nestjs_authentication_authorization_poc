@@ -1,26 +1,55 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+import { RegistrationDto, LoginDto } from './dto/create-user.dto';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService,
+  ) { }
+
+  async registerUser(registrationData: RegistrationDto): Promise<User> {
+    const user = this.userRepository.create(registrationData);
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hashSync(user.password, salt);
+    return await this.userRepository.save(user);
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async loginUser(loginData: LoginDto) {
+    const { email, password } = loginData;
+
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    if (user.password !== password) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = await this.jwtService.signAsync(payload);
+    return { access_token: accessToken };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+
+  async findByEmail(email: string): Promise<User> {
+    return this.userRepository.findOne({ where: { email: email } });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+  async comparePassword(password: string, hash) {
+    return await bcrypt.compare(password, hash)
+}
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async findAllUser(): Promise<User[]> {
+    const users = await this.userRepository.find();
+    return users;
   }
 }
+

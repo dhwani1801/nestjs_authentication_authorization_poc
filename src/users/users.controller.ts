@@ -1,34 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { RegistrationDto, LoginDto } from './dto/create-user.dto';
+import { User } from './entities/user.entity';
+import { AuthService } from '../auth/auth.service';
+import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post('register')
+  async register(@Body() registrationData: RegistrationDto): Promise<User> {
+    return await this.usersService.registerUser(registrationData);
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Post('login')
+  async login(@Body() loginData: LoginDto) {
+    return this.usersService.loginUser(loginData);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @UseGuards(AuthGuard('jwt'))
+  @Get('/fetchall')
+  async fetchAll(): Promise<User[]> {
+    try {
+      return await this.usersService.findAllUser();
+    } catch (error) {
+      console.error('error, userController.fetchAll', error);
+    }
   }
 }
