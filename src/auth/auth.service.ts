@@ -20,6 +20,11 @@ export class AuthService {
     return null;
   }
 
+  /**
+   * login function which will generate jwt token
+   * @param loginDto 
+   * @returns 
+   */
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
     const payload = { email: user.email, sub: user.id };
